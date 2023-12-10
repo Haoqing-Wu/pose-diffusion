@@ -53,6 +53,7 @@ class DDPMEvaluator(nn.Module):
         super(DDPMEvaluator, self).__init__()
         self.acceptance_rre = cfg.eval.rre_threshold
         self.acceptance_rte = cfg.eval.rte_threshold
+        self.norm_factor = cfg.data.norm_factor
 
   
     @torch.no_grad()
@@ -97,7 +98,7 @@ class DDPMEvaluator(nn.Module):
         info_file = "./data/lm/models/models_info.json"
         with open(info_file, 'r') as file:
             model_info = json.load(file)[str(obj_id)]
-        diameter = model_info['diameter'] / 1000.0
+        diameter = model_info['diameter'] / 1000.0 * self.norm_factor
         src_points = output_dict['src_points']
         
         transform = data_dict['transform_raw'].squeeze(0)

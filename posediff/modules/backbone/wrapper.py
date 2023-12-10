@@ -107,7 +107,7 @@ class DiffusionWrapper(Module):
             rot = compute_rotation_matrix_from_ortho6d(ortho6d.unsqueeze(0).cuda()).squeeze(0).cpu()
         
         init_trans = torch.from_numpy(get_transform_from_rotation_translation(rot, trans).astype(np.float32)).cuda()
-        init_trans_icp = torch.from_numpy(get_transform_from_rotation_translation(rot, trans/self.norm_factor).astype(np.float32)).cuda()
+        init_trans_icp = torch.from_numpy(get_transform_from_rotation_translation(rot, trans).astype(np.float32)).cuda()
         ref_points = ref_points.cpu().numpy()
 
         source = o3d.geometry.PointCloud()
@@ -115,11 +115,11 @@ class DiffusionWrapper(Module):
         target = o3d.geometry.PointCloud()
         target.points = o3d.utility.Vector3dVector(ref_points)
         reg_p2p = o3d.pipelines.registration.registration_icp(
-            source, target, 0.005, init_trans_icp.cpu().numpy(),
+            source, target, 0.05, init_trans_icp.cpu().numpy(),
             o3d.pipelines.registration.TransformationEstimationPointToPoint(),
             o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration = 20000))
         refined_trans = torch.from_numpy(reg_p2p.transformation.astype(np.float32)).cuda()
-        refined_trans[:3, 3] = refined_trans[:3, 3] * self.norm_factor
+        refined_trans[:3, 3] = refined_trans[:3, 3]
         output_dict['refined_trans'] = refined_trans
         output_dict['coarse_trans'] = init_trans   
         return output_dict

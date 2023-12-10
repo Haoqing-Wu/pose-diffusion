@@ -98,8 +98,8 @@ class LMODataset(data.Dataset):
     def __getitem__(self, index):
         data_dict = self.data[index]
         obj_id = data_dict['obj_id']
-        src_pcd = data_dict['src_points']
-        tgt_pcd = data_dict['ref_points']
+        src_pcd = data_dict['src_points'] * self.norm_factor
+        tgt_pcd = data_dict['ref_points'] * self.norm_factor
         rot = data_dict['rot']
         trans = data_dict['trans'] * self.norm_factor
         rgb = data_dict['rgb']

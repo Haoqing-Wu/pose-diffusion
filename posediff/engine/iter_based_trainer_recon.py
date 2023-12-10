@@ -229,7 +229,7 @@ class IterBasedReconTrainer(BaseTrainer):
         assert self.val_loader is not None
 
         if self.args.resume:
-            self.load_snapshot(osp.join(self.snapshot_recon_dir, 'snapshot_comp_k64_lm6.pth.tar'))
+            self.load_snapshot(osp.join(self.snapshot_recon_dir, 'snapshot_comp_k64_lm10.pth.tar'))
         elif self.args.snapshot is not None:
             self.load_snapshot(self.args.snapshot)
         self.set_train_mode()

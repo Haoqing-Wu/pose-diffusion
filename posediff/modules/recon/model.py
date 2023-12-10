@@ -394,10 +394,11 @@ class ReconNet(nn.Module):
         self.enable_cls_emb = cfg.recon.cls_emb
         self.decoder = FoldNet_Decoder(cfg)
         self.pos_emb = SinusoidalPositionEmbeddings(self.feat_dims)
+        self.norm_factor = cfg.data.norm_factor
 
 
     def forward(self, input):
-        ref_points = input['ref_points']
+        ref_points = input['ref_points'] / self.norm_factor
         obj_id = input['obj_id']
         feats = self.encoder(ref_points)
         if self.enable_cls_emb:
@@ -410,7 +411,7 @@ class ReconNet(nn.Module):
         }
 
     def get_feat(self, input):
-        ref_points = input['ref_points']
+        ref_points = input['ref_points'] / self.norm_factor
         obj_id = input['obj_id']
         feats = self.encoder(ref_points)
         if self.enable_cls_emb:

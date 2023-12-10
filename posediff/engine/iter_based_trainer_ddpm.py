@@ -264,10 +264,10 @@ class IterBasedDDPMTrainer(BaseTrainer):
         assert self.val_loader is not None
 
         # load pretrained encoder -> self.encoder_model
-        self.load_pretrained_model(osp.join(self.snapshot_encoder_dir, 'snapshot_comp_k64_lm6.pth.tar'))
+        self.load_pretrained_model(osp.join(self.snapshot_encoder_dir, 'snapshot_comp_k64_lm8.pth.tar'))
 
         if self.args.resume:
-            self.load_snapshot(osp.join(self.snapshot_ddpm_dir, 'snapshot_pose_large_cls_lm.pth.tar'))
+            self.load_snapshot(osp.join(self.snapshot_ddpm_dir, 'snapshot_pose_debug_lm6.pth.tar'))
         elif self.args.snapshot is not None:
             self.load_snapshot(self.args.snapshot)
         self.set_train_mode()

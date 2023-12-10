@@ -444,6 +444,84 @@ def get_corr_from_matrix_gt(corr_matrix, low, high):
     )
     return corr, len(ref_corr_indices)
 
+def isotropic_transform_error(gt_transforms, transforms, reduction='mean'):
+    r"""Compute the isotropic Relative Rotation Error and Relative Translation Error.
+
+    Args:
+        gt_transforms (Tensor): ground truth transformation matrix (*, 4, 4)
+        transforms (Tensor): estimated transformation matrix (*, 4, 4)
+        reduction (str='mean'): reduction method, 'mean', 'sum' or 'none'
+
+    Returns:
+        rre (Tensor): relative rotation error.
+        rte (Tensor): relative translation error.
+    """
+    assert reduction in ['mean', 'sum', 'none']
+
+    gt_rotations, gt_translations = get_rotation_translation_from_transform(gt_transforms)
+    rotations, translations = get_rotation_translation_from_transform(transforms)
+
+    rre = relative_rotation_error(gt_rotations, rotations)  # (*)
+    rte = relative_translation_error(gt_translations, translations)  # (*)
+
+    if reduction == 'mean':
+        rre = rre.mean()
+        rte = rte.mean()
+    elif reduction == 'sum':
+        rre = rre.sum()
+        rte = rte.sum()
+
+    return rre, rte
+
+def relative_rotation_error(gt_rotations, rotations):
+    r"""Isotropic Relative Rotation Error.
+
+    RRE = acos((trace(R^T \cdot \bar{R}) - 1) / 2)
+
+    Args:
+        gt_rotations (Tensor): ground truth rotation matrix (*, 3, 3)
+        rotations (Tensor): estimated rotation matrix (*, 3, 3)
+
+    Returns:
+        rre (Tensor): relative rotation errors (*)
+    """
+    mat = torch.matmul(rotations.transpose(-1, -2), gt_rotations)
+    trace = mat[..., 0, 0] + mat[..., 1, 1] + mat[..., 2, 2]
+    x = 0.5 * (trace - 1.0)
+    x = x.clamp(min=-1.0, max=1.0)
+    x = torch.arccos(x)
+    rre = 180.0 * x / np.pi
+    return rre
+
+
+def relative_translation_error(gt_translations, translations):
+    r"""Isotropic Relative Rotation Error.
+
+    RTE = \lVert t - \bar{t} \rVert_2
+
+    Args:
+        gt_translations (Tensor): ground truth translation vector (*, 3)
+        translations (Tensor): estimated translation vector (*, 3)
+
+    Returns:
+        rre (Tensor): relative rotation errors (*)
+    """
+    rte = torch.linalg.norm(gt_translations - translations, dim=-1)
+    return rte
+
+def get_rotation_translation_from_transform(transform):
+    r"""Decompose transformation matrix into rotation matrix and translation vector.
+
+    Args:
+        transform (Tensor): (*, 4, 4)
+
+    Returns:
+        rotation (Tensor): (*, 3, 3)
+        translation (Tensor): (*, 3)
+    """
+    rotation = transform[..., :3, :3]
+    translation = transform[..., :3, 3]
+    return rotation, translation
 
 def statistical_outlier_rm(pcd, num, std=1.0):
     pcd_o3d = o3d.geometry.PointCloud()
@@ -459,12 +537,12 @@ def debug_save_pcd(pcd, dir):
 
 def save_transformed_pcd(output_dict, data_dict, log_dir, level, norm_factor=1.0):
     transform = copy.deepcopy(data_dict['transform_raw'].squeeze(0))
-    transform[:3, 3] = transform[:3, 3] / norm_factor
+    transform[:3, 3] = transform[:3, 3]
     if level == 'coarse':
         est_transform = copy.deepcopy(output_dict['coarse_trans'])
     elif level == 'refined':
         est_transform = copy.deepcopy(output_dict['refined_trans'])
-    est_transform[:3, 3] = est_transform[:3, 3] / norm_factor
+    est_transform[:3, 3] = est_transform[:3, 3]
 
     src_points = data_dict['src_points'].squeeze(0)
     ref_points = data_dict['ref_points_raw'].squeeze(0)
